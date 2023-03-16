@@ -7,8 +7,8 @@ link trong file feeds.json
 - truy cập {POST} http://127.0.0.1/isert_ip để gửi danh sách IP 
 thu thập được lên MongoDB
 - tiêu chí
-*[x] Thu thập hết tất cả IP được liệt kê trong các URL của file feeds.json
-*[x] Data thu thập không bị duplicate
+* [x] Thu thập hết tất cả IP được liệt kê trong các URL của file feeds.json
+* [x] Data thu thập không bị duplicate
 
 2. Kiểm tra 1 IP bất kì được nhập từ bàn phím
 - Kiểm tra xem IP đấy có đúng định dạng hay không, là IP Public hay Private
@@ -52,14 +52,14 @@ thu thập được lên MongoDB
 - tạo docker container chạy image mongo, network là network-ver1
 - database kết nối với mongodb localhost chạy trên dockercontainer, port 27017 có username,password đều là admin
 - tạo image từ file .py, chạy container từ image vừa tạo
-- Docker:
-    - run : docker pull mongo
-            docker network create network-ver1
-            docker run -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin -dp 27017:27017 --name mongo --network network-ver1 mongo
-            docker build . -t datdo2509/ipcheckblacklist:ver1
-            docker container run --name ipcheckblacklist -dp 5008:5008 --network network-ver1  datdo2509/ipcheckblacklist:ver1
+- Docker :
+    -   docker pull mongo
+    -   docker network create network-ver1
+    -   docker run -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin -dp 27017:27017 --name mongo --network network-ver1 mongo
+    -   docker build . -t datdo2509/ipcheckblacklist:ver1
+    -   docker container run --name ipcheckblacklist -dp 5008:5008 --network network-ver1  datdo2509/ipcheckblacklist:ver1
 
-*[x] Note: Khi chạy 2 container, chúng giao tiếp với nhau bằng DNS nội bộ, vì thế thuộc tính `host` phải đặt bằng tên miền, trong trường hợp
+* [x] Note: Khi chạy 2 container, chúng giao tiếp với nhau bằng DNS nội bộ, vì thế thuộc tính `host` phải đặt bằng tên miền, trong trường hợp
 này là tên container chạy mongodb, chính là `mongo` ( --name), trong khi chạy riêng file .py ko trong container thì phải thay lại bằng `localhost`
 
 enjoy! :D
