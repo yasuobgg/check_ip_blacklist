@@ -4,7 +4,7 @@
 1. Tìm nguồn IP độc hại (blacklist)
 - Lấy danh sách những IP độc hại được gửi lên từ [các trang web hoặc blog](https://www.spamhaus.org/drop/drop.txt), có sẵn 
 link trong file feeds.json
-- truy cập {POST} http://127.0.0.1/isert_ip để gửi danh sách IP 
+- truy cập {POST} http://127.0.0.1/insert_ip để gửi danh sách IP 
 thu thập được lên MongoDB
 - tiêu chí
 * [x] Thu thập hết tất cả IP được liệt kê trong các URL của file feeds.json
