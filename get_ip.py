@@ -1,5 +1,6 @@
 import requests
 import re
+from re import findall
 from pymongo import MongoClient
 from flask import Flask, jsonify, request
 import json
@@ -31,7 +32,52 @@ class MyMongodb:
             return 0  # return 0 if not find f
 
 
-mongodb = MyMongodb("mongodb://admin:admin@localhost:27017/", "ip_blacklist", "ip_ver1")
+mongodb = MyMongodb("mongodb://admin:admin@mongo:27017/", "ip_blacklist", "ip_ver1")
+
+
+class ip_checker(object):
+    def __init__(self, ipaddress):
+        self.ip_address = ipaddress
+
+    ## This method return Boolean "True or False" by checking wheter the given ip address is valid or not
+    def is_valid(self):
+        if not findall(
+            "(?i)^(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5])$",
+            self.ip_address,
+        ):
+            return str("No")
+        else:
+            return str("Yes")
+
+    ## This method checks whether the given ipaddress is private or public & returns True or False
+    def is_private(self):
+        if findall(
+            "(?i)^192.168.(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5])$",
+            self.ip_address,
+        ):
+            return str("Private")
+        elif findall("(?i)^127.\d{1,3}.\d{1,3}.\d{1,3}$", self.ip_address):
+            return str("Private")
+        elif findall(
+            "(?i)^10.(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5])$",
+            self.ip_address,
+        ):
+            return str("Private")
+        elif findall(
+            "(?i)^172.(1[6-9]|2[0-9]|3[0-1]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5])$",
+            self.ip_address,
+        ):
+            return str("Private")
+        else:
+            return str("Public")
+
+    ## Check if the ip address is public or not
+    def is_public(self):
+        if self.is_valid() and not self.is_private():
+            return True
+        else:
+            return False
+
 
 # open feeds.json to get urls
 filename = "feeds.json"
@@ -86,15 +132,22 @@ def insert_ip():
 @app.route("/check_ip", methods=["post"])
 def check_ip():
     ip = request.json.get("ip")
-    f = mongodb.findone({"ip": ip})
-    if f ==0:
-        res = jsonify("Do not in blacklist")
-        res.status_code = 200
-    else:
-        res = jsonify("blacklist")
-        res.status_code = 200
+    check = ip_checker(ip)
 
-    return res
+    f = mongodb.findone({"ip": ip})
+    if f == 0:
+        res = "Do not in blacklist"
+        
+    else:
+        res = "blacklist"
+        
+    return (
+        jsonify(Your_input_ip = ip,  
+                Is_valid_IP = check.is_valid(), 
+                Is_public_or_private = check.is_private(), 
+                Type = res),
+        200,
+    )
 
 
 @app.route("/check_my_ip", methods=["post"])
@@ -103,6 +156,11 @@ def check_my_ip():
     data = requests.get(PROXY_CHECK_URL)
     myip = data.text.splitlines()
     myip = myip[0].split(":")[1].strip('"{}')
+
+    # check myip
+    check_ip = ip_checker(myip)
+    # print(check_ip.is_valid())
+    # print(check_ip.is_private())
 
     # find in mongodb blacklist
     f = mongodb.findone({"ip": myip})
@@ -122,18 +180,26 @@ def check_my_ip():
 
     # condition for your ip, f is blacklist condition  and success is tor condition
     if f == 0 and success == 0:
-        res = "==> It's NOT a TOR exit node and NOT in blacklist"
+        res = "It's NOT a TOR exit node and NOT in blacklist"
 
     elif f == 1 and success == 0:
-        res = "==> It's NOT a TOR exit node and in blacklist"
+        res = "It's NOT a TOR exit node and in blacklist"
 
     elif f == 0 and success == 1:
-        res = "==> It's a TOR exit node and NOT in blacklist"
+        res = "It's a TOR exit node and NOT in blacklist"
 
     else:
-        res = "==> It's a TOR exit node and in blacklist"
+        res = "It's a TOR exit node and in blacklist"
 
-    return jsonify("[+] Your public Ip: " + myip + " " + res), 200
+    return (
+        jsonify(Your_IP = myip,  
+                Is_valid_IP = check_ip.is_valid(), 
+                Is_public_or_private = check_ip.is_private(), 
+                Type = res),
+        200,
+    )
+    # return jsonify({"Your_IP":myip, "Is_valid_IP":check_ip.is_valid(), "Is_public_or_private":check_ip.is_private(), "Type":res},)
+            
 
 
 if __name__ == "__main__":
