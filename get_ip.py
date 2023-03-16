@@ -1,11 +1,19 @@
+# basic lib
 import requests
 import re
 from re import findall
-from pymongo import MongoClient
-from flask import Flask, jsonify, request
 import json
+import socket
+
+# mongo lib
+from pymongo import MongoClient
+
+# app lib
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 
 class MyMongodb:
@@ -32,14 +40,14 @@ class MyMongodb:
             return 0  # return 0 if not find f
 
 
-mongodb = MyMongodb("mongodb://admin:admin@mongo:27017/", "ip_blacklist", "ip_ver1")
+mongodb = MyMongodb("mongodb://admin:admin@localhost:27017/", "ip_blacklist", "ip_ver1")
 
 
 class ip_checker(object):
     def __init__(self, ipaddress):
-        self.ip_address = ipaddress
+        self.ip_address = ipaddress.split("/")[0]
 
-    ## This method return Boolean "True or False" by checking wheter the given ip address is valid or not
+    ## This method checking wheter the given ip address is valid or not and return str yes or no
     def is_valid(self):
         if not findall(
             "(?i)^(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5])$",
@@ -49,7 +57,7 @@ class ip_checker(object):
         else:
             return str("Yes")
 
-    ## This method checks whether the given ipaddress is private or public & returns True or False
+    ## This method checks whether the given ipaddress is private or public and return str private or public
     def is_private(self):
         if findall(
             "(?i)^192.168.(\d|\d\d|1[0-9][0-9]|2[0-9][0-5]).(\d|\d\d|1[0-9][0-9]|2[0-9][0-5])$",
@@ -79,6 +87,20 @@ class ip_checker(object):
             return False
 
 
+# func to get private Ip
+def my_private_ip():
+    return socket.gethostbyname_ex(socket.gethostname())[2][3]
+
+
+# func to get public Ip
+def my_public_ip():
+    PROXY_CHECK_URL = "https://branchup.pro/whatsmyip.php"
+    data = requests.get(PROXY_CHECK_URL)  # get public ip address
+    myip = data.text.splitlines()
+    myip = myip[0].split(":")[1].strip('"{}')  # tach string de lay rieng ip address
+    return myip
+
+
 # open feeds.json to get urls
 filename = "feeds.json"
 with open(filename) as f:
@@ -86,14 +108,6 @@ with open(filename) as f:
 urls = []
 for feed in data["feeds"]:
     urls.append(feed["url"])
-# urls = [
-#     "https://www.spamhaus.org/drop/drop.txt",
-#     "http://rules.emergingthreats.net/blockrules/compromised-ips.txt",
-#     "https://www.spamhaus.org/drop/edrop.txt",
-#     "http://www.blocklist.de/lists/bruteforcelogin.txt",
-#     "http://dragonresearchgroup.org/insight/sshpwauth.txt", # url not found
-# ]
-# print(urls)
 
 
 @app.route("/insert_ip", methods=["post"])
@@ -137,33 +151,34 @@ def check_ip():
     f = mongodb.findone({"ip": ip})
     if f == 0:
         res = "Do not in blacklist"
-        
+
     else:
         res = "blacklist"
-        
+
     return (
-        jsonify(Your_input_ip = ip,  
-                Is_valid_IP = check.is_valid(), 
-                Is_public_or_private = check.is_private(), 
-                Type = res),
+        jsonify(
+            Your_input_ip=ip,
+            Is_valid_IP=check.is_valid(),
+            Is_public_or_private=check.is_private(),
+            Type=res,
+        ),
         200,
     )
 
 
 @app.route("/check_my_ip", methods=["post"])
 def check_my_ip():
-    PROXY_CHECK_URL = "https://branchup.pro/whatsmyip.php"
-    data = requests.get(PROXY_CHECK_URL)
-    myip = data.text.splitlines()
-    myip = myip[0].split(":")[1].strip('"{}')
+    # lay public ip address
+    public_ip = my_public_ip()
 
-    # check myip
-    check_ip = ip_checker(myip)
-    # print(check_ip.is_valid())
-    # print(check_ip.is_private())
+    # lay private ip address
+    private_ip = my_private_ip()
+
+    # khoi tao class ip_checker
+    check_ip = ip_checker(public_ip)
 
     # find in mongodb blacklist
-    f = mongodb.findone({"ip": myip})
+    f = mongodb.findone({"ip": public_ip})
 
     # find in tor
     tor = requests.get("https://check.torproject.org/exit-addresses")
@@ -172,7 +187,7 @@ def check_my_ip():
         if "ExitAddress" in ip_tor:
             ip_tor = ip_tor.split(" ")[1]
             #    print(ip_tor)
-            if myip == ip_tor:
+            if public_ip == ip_tor:
                 success = 1  # success = 1 if find ip in tor list
                 break
             else:
@@ -192,14 +207,16 @@ def check_my_ip():
         res = "It's a TOR exit node and in blacklist"
 
     return (
-        jsonify(Your_IP = myip,  
-                Is_valid_IP = check_ip.is_valid(), 
-                Is_public_or_private = check_ip.is_private(), 
-                Type = res),
+        jsonify(
+            Your_public_IP=public_ip,
+            Your_private_IP=private_ip,
+            Is_valid_IP=check_ip.is_valid(),
+            Is_public_or_private=check_ip.is_private(),
+            Type=res,
+        ),
         200,
     )
     # return jsonify({"Your_IP":myip, "Is_valid_IP":check_ip.is_valid(), "Is_public_or_private":check_ip.is_private(), "Type":res},)
-            
 
 
 if __name__ == "__main__":

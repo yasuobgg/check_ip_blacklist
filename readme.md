@@ -24,15 +24,15 @@ thu thập được lên MongoDB
 ```
 {
     "Is_public_or_private": "Public",
-    "Is_valid_IP": "No",
+    "Is_valid_IP": "Yes",
     "Type": "blacklist",
     "Your_input_ip": "1.19.0.0/16"
 }
 ```
 
 3. Kiểm tra địa chỉ IP của máy tính của bạn
-- IP được lấy ở [đây](https://branchup.pro/whatsmyip.php)
-- Kiểm tra xem IP đấy có đúng định dạng hay không, là IP Public hay Private(mặc dù lấy ở trang trên luôn là public :D, => hơi ngu, sẽ sửa sau)
+- IP public được lấy ở [đây](https://branchup.pro/whatsmyip.php)
+- Kiểm tra xem IP đấy có đúng định dạng hay không, là IP Public hay Private
 - Có trong blacklist (P1) của DB hay không
 - Có thuộc [TOR node](https://check.torproject.org/exit-addresses) hay không
 - truy cập {POST} http://127.0.0.1:5008/check_my_ip để kiểm tra 
@@ -44,7 +44,8 @@ thu thập được lên MongoDB
     "Is_public_or_private": "Public",
     "Is_valid_IP": "Yes",
     "Type": "It's NOT a TOR exit node and NOT in blacklist",
-    "Your_IP": "113.20.108.53"
+    "Your_private_IP": "192.168.4.111",
+    "Your_public_IP": "113.20.108.53"
 }
 ```
 4. Viết Dockerfile và docker-compose để tạo image và container
