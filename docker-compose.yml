@@ -4,6 +4,6 @@ services:
     build: .
     command: python -u get_ip.py
     ports:
-      - "5000:5000"
+      - "5008:5008"
     volumes:
       - .:/app

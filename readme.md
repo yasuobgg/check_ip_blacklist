@@ -51,7 +51,7 @@ thu thập được lên MongoDB
 - tạo 1 network có tên là network-ver1 để cùng chạy 2 container, 1 là mongodb, 2 là file .py
 - tạo docker container chạy image mongo, network là network-ver1
 - database kết nối với mongodb localhost chạy trên dockercontainer, port 27017 có username,password đều là admin
-- tạo image từ file .py, chạy container từ image vừa tạo
+- tạo image từ file .py, chạy container từ image vừa tạo trên network-ver1
 - Docker :
     -   docker pull mongo
     -   docker network create network-ver1
